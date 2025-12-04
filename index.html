@@ -283,8 +283,7 @@
             const invoiceElement = document.getElementById('invoice-paper');
             const exportBtn = document.getElementById('exportPdfBtn');
             exportBtn.textContent = 'กำลังสร้าง PDF...'; exportBtn.disabled = true;
-
-            // ดึงค่ามาสร้างเลขที่เอกสารสำหรับใช้เป็นชื่อไฟล์
+            
             const invoiceDate = new Date(document.getElementById('invoiceDate').value);
             const docSuffix = document.getElementById('docNumberSuffix').value.padStart(4, '0');
             const docYear = invoiceDate.getFullYear();
@@ -294,16 +293,23 @@
             html2canvas(invoiceElement, { scale: 3, useCORS: true }).then(canvas => {
                 const imgData = canvas.toDataURL('image/png');
                 const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-                const pdfWidth = pdf.internal.pageSize.getWidth(), pdfHeight = pdf.internal.pageSize.getHeight();
-                const canvasAspectRatio = canvas.width / canvas.height;
-                let finalImgWidth = pdfWidth, finalImgHeight = pdfWidth / canvasAspectRatio;
-                if (finalImgHeight > pdfHeight) {
-                    finalImgHeight = pdfHeight;
-                    finalImgWidth = finalImgHeight * canvasAspectRatio;
-                }
-                const xOffset = (pdfWidth - finalImgWidth) / 2;
-                pdf.addImage(imgData, 'PNG', xOffset, 0, finalImgWidth, finalImgHeight);
-                pdf.save(fileName); // แก้ไขให้ใช้ชื่อไฟล์ที่สร้างขึ้นใหม่
+                
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                
+                const canvasWidth = canvas.width;
+                const canvasHeight = canvas.height;
+                const canvasAspectRatio = canvasWidth / canvasHeight;
+
+                // **ส่วนที่แก้ไข**
+                // บังคับให้ความกว้างของรูปภาพพอดีกับความกว้างของ PDF เสมอ
+                const finalImgWidth = pdfWidth;
+                // แล้วคำนวณความสูงตามสัดส่วนเดิมเพื่อไม่ให้ภาพบิดเบี้ยว
+                const finalImgHeight = finalImgWidth / canvasAspectRatio;
+
+                // เพิ่มรูปภาพลงใน PDF โดยเริ่มจากขอบซ้ายบน (x=0, y=0)
+                pdf.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
+                
+                pdf.save(fileName);
                 exportBtn.textContent = 'Export to PDF'; exportBtn.disabled = false;
             });
         }
